@@ -1,10 +1,9 @@
 package com.roseny.securityjwt.component;
 
-import com.roseny.securityjwt.service.impl.UserDetailsImpl;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
@@ -17,13 +16,12 @@ public class JwtCore {
     @Value("${jwt.lifetime}")
     private Duration lifetime;
 
-    public String generateToken(Authentication authentication) {
-        UserDetailsImpl userDetails = (UserDetailsImpl)authentication.getPrincipal();
+    public String generateToken(UserDetails userDetails) {
         return Jwts.builder()
                 .setSubject(userDetails.getUsername())
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(new Date().getTime() + lifetime.toMillis()))
-                .signWith(SignatureAlgorithm.ES256, secret)
+                .signWith(SignatureAlgorithm.HS256, secret)
                 .compact();
     }
 

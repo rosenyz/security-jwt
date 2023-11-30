@@ -1,54 +1,50 @@
 package com.roseny.securityjwt.component;
 
 import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.SignatureException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
 @Component
+@RequiredArgsConstructor
+@Slf4j
 public class TokenFilter extends OncePerRequestFilter {
-    private JwtCore jwtCore;
-    private UserDetailsService userDetailsService;
+    private final JwtCore jwtCore;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        String token = null;
+        String authHeader = request.getHeader("Authorization");
         String username = null;
-        UserDetails userDetails = null;
-        UsernamePasswordAuthenticationToken auth = null;
+        String jwt = null;
 
-        try {
-            String headerAuth = request.getHeader("Authorization");
-            if (headerAuth != null && headerAuth.startsWith("Bearer ")) {
-                token = headerAuth.substring(7);
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            jwt = authHeader.substring(7);
+            try {
+                username = jwtCore.getUsernameFromToken(jwt);
+            } catch (ExpiredJwtException e) {
+                log.info("Token was expired!");
+            } catch (SignatureException e) {
+                log.info("Signature invalid!");
             }
-            if (token != null) {
-                try {
-                    username = jwtCore.getUsernameFromToken(token);
-                } catch (ExpiredJwtException e) {
-                    // TODO
-                }
-                if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                    userDetails = userDetailsService.loadUserByUsername(username);
-                    auth = new UsernamePasswordAuthenticationToken(
-                            userDetails,
-                            null
-                    );
-                    SecurityContextHolder.getContext().setAuthentication(auth);
-                }
-            }
-        } catch (Exception e) {
-            // TODO
         }
+
+        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            UsernamePasswordAuthenticationToken token =
+                    new UsernamePasswordAuthenticationToken(username, null);
+
+            SecurityContextHolder.getContext().setAuthentication(token);
+        }
+
         filterChain.doFilter(request, response);
     }
 }
