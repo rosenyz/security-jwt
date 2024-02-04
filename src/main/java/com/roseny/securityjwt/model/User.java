@@ -11,8 +11,20 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column
+    @Column(name = "email")
+    private String email;
+
+    @Column(name = "email_confirmed")
+    private Boolean emailConfirmed;
+
+    @Column(name = "username")
     private String username;
-    @Column
+
+    @Column(name = "password")
     private String password;
+
+    @PrePersist
+    private void init() {
+        this.emailConfirmed = false;
+    }
 }
