@@ -1,4 +1,5 @@
 # Simple REST API security with JWT
+# [readme deprecated]
 ### 1. Prepare to work:
 * Set up the configuration in the application.properties file
 * Come up with a secret for the token and enter the validity time of the token
